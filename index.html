@@ -1,0 +1,61 @@
+document.getElementById('saveButton').addEventListener('click', async () => {
+    const prompt = document.getElementById('promptInput').value.trim();
+
+    if (!prompt) {
+        alert('אנא הזן תוכן לפני השמירה!');
+        return;
+    }
+
+    // יצירת מסמך Word באמצעות docx
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+
+    // יצירת פסקה עם כותרת
+    const title = new Paragraph({
+        children: [
+            new TextRun({
+                text: "פרומפט שנשמר",
+                bold: true,
+                size: 32, // 16pt
+            }),
+        ],
+        alignment: AlignmentType.RIGHT,
+    });
+
+    // יצירת פסקה עם תוכן
+    const content = new Paragraph({
+        children: [
+            new TextRun({
+                text: prompt,
+                font: "Arial",
+                size: 24, // 12pt
+            }),
+        ],
+        alignment: AlignmentType.RIGHT,
+    });
+
+    // יצירת המסמך
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: [title, content],
+        }],
+    });
+
+    try {
+        // הפיכת המסמך ל-blob
+        const blob = await Packer.toBlob(doc);
+        
+        // יצירת URL להורדה
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "prompt.docx";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("שגיאה ביצירת הקובץ:", error);
+        alert("אירעה שגיאה בעת יצירת הקובץ.");
+    }
+});
