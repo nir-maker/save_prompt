@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שמירת פרומפט לקובץ Word</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+            direction: rtl;
+            text-align: right;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            resize: vertical;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            textarea {
+                height: 150px;
+                font-size: 14px;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+    <!-- הוספת ספריית docx מה-CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.4.0/docx.min.js" integrity="sha512-TsGkR0IjN2wClb5pz3EZZc8K3E1GhMH+FvG1KjB6xOQGZl8IWejFPKAp1YkFjlDx4Hp0cQy1M6r8IuWnO70g+Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>שמירת פרומפט לקובץ Word</h1>
+        <textarea id="promptInput" placeholder="הכנס כאן את הפרומפט..."></textarea>
+        <button id="saveButton">שמור כקובץ Word</button>
+    </div>
+
+    <script>
+        document.getElementById('saveButton').addEventListener('click', async () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+
+            if (!prompt) {
+                alert('אנא הזן תוכן לפני השמירה!');
+                return;
+            }
+
+            // יצירת מסמך Word באמצעות docx
+            const { Document, Packer, Paragraph, TextRun } = docx;
+
+            // יצירת פסקה עם כותרת
+            const title = new Paragraph({
+                text: "פרומפט שנשמר",
+                heading: "Heading1",
+                alignment: docx.AlignmentType.RIGHT,
+            });
+
+            // יצירת פסקה עם תוכן
+            const content = new Paragraph({
+                children: [
+                    new TextRun({
+                        text: prompt,
+                        font: "Arial",
+                        size: 24, // 12pt
+                        break: 1,
+                        bidi: true, // כיוון ימין לשמאל
+                    }),
+                ],
+                alignment: docx.AlignmentType.RIGHT,
+            });
+
+            // יצירת המסמך
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [title, content],
+                }],
+            });
+
+            // הפיכת המסמך ל-blob
+            const blob = await Packer.toBlob(doc);
+
+            // יצירת URL להורדה
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "prompt.docx";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
