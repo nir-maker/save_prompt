@@ -1,0 +1,175 @@
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>הפקת קובץ DOCX ו-PDF</title>
+    <!-- 1. עיצוב בסיסי -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            direction: rtl;
+        }
+        h1 {
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn {
+            display: inline-block;
+            width: 48%;
+            padding: 15px;
+            margin: 0.5rem 1%;
+            text-align: center;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #fff;
+        }
+        .btn-docx {
+            background-color: #28a745;
+        }
+        .btn-docx:hover {
+            background-color: #218838;
+        }
+        .btn-pdf {
+            background-color: #007bff;
+        }
+        .btn-pdf:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <!-- 2. ספריית docx ליצירת DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.4.0/docx.min.js" integrity="sha512-TsGkR0IjN2wClb5pz3EZZc8K3E1GhMH+FvG1KjB6xOQGZl8IWejFPKAp1YkFjlDx4Hp0cQy1M6r8IuWnO70g+Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- 3. ספריית pdfmake ליצירת PDF -->
+    <!-- חשוב לוודא טעינה בסדר הנכון: pdfmake ולאחר מכן vfs_fonts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.5/pdfmake.min.js" integrity="sha512-LmZcGVFrpEiaYRvTjkRtZldMN+T9gDgOV2ErRf5KW2taTSoQBnD3iSk3js+SJUgxVHBDVj7kBjxgl1SFTkJQ+A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.5/vfs_fonts.js" integrity="sha512-i9aP5fQ1MdMLmWSyQclMDFltySZasQZo4r3SCQMPX+1k5Lg8h6n4FDZbPYJoRdjf94lEczx0mxRpIaC1+8q3Nw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>הפקת קובץ DOCX או PDF</h1>
+        <textarea id="promptInput" placeholder="הקלד/י כאן את התוכן..."></textarea>
+        <div style="text-align: center;">
+            <button class="btn btn-docx" id="saveDocx">שמור כ-DOCX</button>
+            <button class="btn btn-pdf" id="savePdf">שמור כ-PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. שמירה כ-DOCX באמצעות docx
+        document.getElementById('saveDocx').addEventListener('click', async () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                alert('אנא הכנס/י תוכן לפני השמירה!');
+                return;
+            }
+
+            const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+
+            const title = new Paragraph({
+                text: 'כותרת המסמך',
+                heading: 'Heading1',
+                alignment: AlignmentType.RIGHT
+            });
+
+            const content = new Paragraph({
+                children: [
+                    new TextRun({
+                        text: prompt,
+                        font: 'Arial',
+                        size: 24, // 12pt
+                        bidi: true,
+                    }),
+                ],
+                alignment: AlignmentType.RIGHT,
+            });
+
+            const doc = new Document({
+                sections: [
+                    {
+                        properties: {},
+                        children: [title, content],
+                    },
+                ],
+            });
+
+            const blob = await Packer.toBlob(doc);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'prompt.docx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // 2. שמירה כ-PDF באמצעות pdfMake
+        document.getElementById('savePdf').addEventListener('click', () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                alert('אנא הכנס/י תוכן לפני השמירה!');
+                return;
+            }
+
+            // הגדרת תוכן למסמך PDF, עם יישור לימין
+            const docDefinition = {
+                content: [
+                    { text: 'כותרת המסמך', style: 'header', alignment: 'right' },
+                    { text: prompt, alignment: 'right' }
+                ],
+                defaultStyle: {
+                    fontSize: 14,
+                    // ניתן להוסיף font: "" עבור פונטים מיוחדים בעברית
+                },
+                styles: {
+                    header: {
+                        fontSize: 18,
+                        bold: true,
+                        margin: [0, 0, 0, 10]
+                    }
+                }
+            };
+
+            pdfMake.createPdf(docDefinition).download('prompt.pdf');
+        });
+
+        // Basic test cases
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Test Cases:');
+            console.log('1) No input => Expect alert and no file download');
+            console.log('2) User enters text => Expect successful DOCX or PDF download');
+            // Additional tests would require user interaction.
+            // 3) Check if pdfMake is loaded => Expect pdfMake object to exist and generate PDF.
+            if (typeof pdfMake !== 'undefined') {
+                console.log('3) pdfMake loaded successfully => Expect PDF generation to work');
+            } else {
+                console.error('3) pdfMake not loaded => This will cause an error');
+            }
+        });
+    </script>
+</body>
+</html>
